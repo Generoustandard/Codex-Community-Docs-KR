@@ -72,6 +72,13 @@ def _candidate_text(record: dict, candidate_field: str) -> str:
     return candidate
 
 
+def _optional_text(record: dict, field: str) -> str | None:
+    value = record.get(field)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
 def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]]:
     response = client.embeddings.create(model=model, input=texts)
     return [item.embedding for item in response.data]
@@ -350,7 +357,8 @@ def main() -> None:
             "id": record["id"],
             "source_en": record["source_en"],
             "reference_ko": record["reference_ko"],
-            "candidate_ko": candidate_text,
+            "candidate_ko": _optional_text(record, "candidate_ko") or candidate_text,
+            "evaluated_candidate_ko": candidate_text,
             "backtranslated_en": backtranslated_by_id[record["id"]],
             "semantic_similarity_score": cosine_to_score(semantic_cosine),
             "backtranslation_similarity_score": cosine_to_score(backtranslation_cosine),
@@ -367,6 +375,9 @@ def main() -> None:
                 "terminology_details": terminology_details,
             },
         }
+        improved_candidate = _optional_text(record, "improved_candidate_ko")
+        if improved_candidate:
+            merged["improved_candidate_ko"] = improved_candidate
         merged["issues"] = _filter_issues(
             terminology_issues + [issue.strip() for issue in judgment["issues"] if issue.strip()]
         )
@@ -393,6 +404,7 @@ def main() -> None:
             "evaluated_at": utc_timestamp(),
             "config": {
                 "candidate_field": args.candidate_field,
+                "evaluated_stage": "rewrite" if args.candidate_field == "improved_candidate_ko" else "first_pass",
                 "backtranslation_model": args.backtranslation_model,
                 "judge_model": args.judge_model,
                 "embedding_model": args.embedding_model,

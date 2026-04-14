@@ -105,6 +105,8 @@ def main() -> None:
             **meta,
             "generated_at": utc_timestamp(),
             "generation_model": args.model,
+            "generation_stage": "first_pass_translation",
+            "generation_output_field": "candidate_ko",
             "run_label": args.run_label,
             "pipeline_label": args.pipeline_label,
             "prompt_label": args.prompt_label,

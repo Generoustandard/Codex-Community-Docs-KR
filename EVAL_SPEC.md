@@ -13,9 +13,9 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 
 현재 평가 파이프라인은 다음 산출물을 다룹니다.
 
-- `candidate_ko`: `source_en`에서 새로 생성한 한국어 번역
-- `improved_candidate_ko`: 이후 필요할 경우 다시 평가할 수 있는 후속 개선안
-- `backtranslated_en`: `candidate_ko`를 다시 영어로 옮긴 backtranslation
+- `candidate_ko`: `gpt-5.4-mini`로 만든 first-pass 한국어 번역
+- `improved_candidate_ko`: `gpt-5.4`로 first-pass candidate를 다듬은 rewrite 한국어 번역
+- `backtranslated_en`: 현재 평가 중인 candidate field를 다시 영어로 옮긴 backtranslation
 
 `reviewed_golden`은 자동화된 Phase 1 점수화 루프 밖에 있는 개념입니다. 사람이 검토하고 의도적으로 승격한 예시만 regression testing 또는 더 깊은 평가에 사용합니다.
 
@@ -31,7 +31,7 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 이 저장소는 서로 호환되는 두 가지 평가 레이어를 가집니다.
 
 1. Phase 1 MVP의 공식 문서 쌍 평가
-   `candidate_ko`를 공식 페이지 단위 `reference_ko`와 비교합니다.
+   `candidate_ko` 또는 `improved_candidate_ko`를 공식 페이지 단위 `reference_ko`와 비교합니다.
 2. 회귀 체크와 비교를 위한 경량 golden-example 평가
    `docs/golden/` 아래의 example bank 중 `reviewed_golden_candidate`로 표시된 소규모 target만 골라 생성 결과와 단어, 문장, 문단 수준에서 비교합니다.
 
@@ -91,6 +91,8 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 {
   "generated_at": "2026-03-31T16:59:18.814737+00:00",
   "generation_model": "gpt-5.4-mini",
+  "generation_stage": "first_pass_translation",
+  "generation_output_field": "candidate_ko",
   "run_label": "phase1-baseline",
   "pipeline_label": "baseline",
   "prompt_label": "official_openai_style_translation_v1",
@@ -110,6 +112,31 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 }
 ```
 
+### Rewrite 출력
+
+`improve_candidate.py`는 기존 candidate artifact를 읽어 `improved_candidate_ko`를 추가한 object를 씁니다.
+
+```json
+{
+  "generated_at": "2026-03-31T16:59:18.814737+00:00",
+  "generation_model": "gpt-5.4-mini",
+  "rewritten_at": "2026-03-31T17:10:04.102391+00:00",
+  "rewrite_model": "gpt-5.4",
+  "rewrite_source_field": "candidate_ko",
+  "rewrite_output_field": "improved_candidate_ko",
+  "rewrite_prompt_label": "quality_rewrite_official_openai_style_v1",
+  "records": [
+    {
+      "id": "why-we-no-longer-evaluate-swe-bench-verified.block-001",
+      "source_en": "English source block",
+      "reference_ko": "Official Korean reference block",
+      "candidate_ko": "First-pass Korean block",
+      "improved_candidate_ko": "Rewritten Korean block"
+    }
+  ]
+}
+```
+
 ### Evaluation 출력
 
 `run_eval.py`는 metadata, configuration, summary, 평가된 `records`를 함께 가진 object를 씁니다.
@@ -117,9 +144,11 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 ```json
 {
   "generation_model": "gpt-5.4-mini",
+  "rewrite_model": "gpt-5.4",
   "evaluated_at": "2026-03-31T17:02:52.303607+00:00",
   "config": {
     "candidate_field": "candidate_ko",
+    "evaluated_stage": "first_pass",
     "backtranslation_model": "gpt-5.4-mini",
     "judge_model": "gpt-5.4-mini",
     "embedding_model": "text-embedding-3-small",
@@ -136,7 +165,9 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-001",
       "source_en": "English source block",
       "reference_ko": "Official Korean reference block",
-      "candidate_ko": "Generated Korean block",
+      "candidate_ko": "First-pass Korean block",
+      "improved_candidate_ko": "Rewritten Korean block",
+      "evaluated_candidate_ko": "Generated Korean block",
       "backtranslated_en": "Backtranslated English block",
       "semantic_similarity_score": 92.4,
       "backtranslation_similarity_score": 89.7,
@@ -187,9 +218,11 @@ semantic_similarity_score = clamp(cosine_similarity(korean_target, candidate_ko)
 
 경량 golden-example 레이어에서는 `korean_target = reviewed_golden_ko`입니다.
 
+두 단계 번역 파이프라인에서는 이 지표를 `candidate_ko`와 `improved_candidate_ko` 양쪽에 모두 적용할 수 있습니다. 어떤 텍스트를 평가했는지는 항상 `config.candidate_field`와 record-level `candidate_source_field`로 구분합니다.
+
 ### `backtranslation_similarity_score`
 
-1. `candidate_ko`를 다시 영어로 옮겨 `backtranslated_en` 생성
+1. 현재 평가 중인 candidate field를 다시 영어로 옮겨 `backtranslated_en` 생성
 2. `source_en`과 `backtranslated_en`의 embedding cosine similarity 계산
 3. 아래 방식으로 점수화
 
@@ -292,6 +325,19 @@ curated 또는 future-curated golden 자산은 `docs/golden/` 아래에 있으�
 - 기존 candidate 파일 불러오기
 - `candidate_ko` 또는 `improved_candidate_ko` 필드 선택 비교
 - 한국어 측 cosine similarity와 optional backtranslation similarity 보고
+
+## Two-Stage Translation Workflow
+
+현재 권장 Phase 1 흐름은 다음과 같습니다.
+
+1. `generate_candidate.py`로 `gpt-5.4-mini` 기반 first-pass `candidate_ko` 생성
+2. 필요하면 `run_eval.py --candidate-field candidate_ko`로 first-pass baseline 평가
+3. `improve_candidate.py`로 `gpt-5.4` 기반 `improved_candidate_ko` 생성
+4. `run_eval.py --candidate-field improved_candidate_ko`로 rewrite 후보 평가
+5. `build_report.py --compare-input ...`로 first-pass와 improved candidate 비교 보고서 생성
+6. 사람이 최종 검토 후 일부 항목만 `reviewed_golden` 후보로 관리
+
+이 구조의 목적은 `gpt-5.4-mini`를 빠른 baseline generator로 유지하면서, `gpt-5.4`를 품질 재작성 전용 단계로 추가하는 것입니다.
 
 ## Minimal Human Review Artifact
 

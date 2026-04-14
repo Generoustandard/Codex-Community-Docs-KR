@@ -15,8 +15,9 @@ Phase 1은 의도적으로 범위를 좁게 잡고 있습니다.
 - 공식 영어 페이지를 `source_en`으로 수집
 - 해당 페이지의 공식 한국어 페이지를 `reference_ko`로 수집
 - 안정적인 문단 단위 평가 블록으로 정렬
-- 새로운 한국어 번역 `candidate_ko` 생성
-- `candidate_ko`를 `reference_ko`와 비교
+- `gpt-5.4-mini`로 빠른 1차 번역 `candidate_ko` 생성
+- `gpt-5.4`로 품질 개선용 `improved_candidate_ko` 재작성
+- 평가 단계에서 `candidate_ko` 또는 `improved_candidate_ko`를 선택해 `reference_ko`와 비교
 - 기계 판독용 결과와 사람이 읽는 보고서 저장
 
 현재 평가 역할은 다음과 같습니다.
@@ -25,8 +26,8 @@ Phase 1은 의도적으로 범위를 좁게 잡고 있습니다.
 | --- | --- |
 | `source_en` | OpenAI 공식 영어 원문 |
 | `reference_ko` | OpenAI가 게시한 공식 한국어 번역 |
-| `candidate_ko` | 파이프라인이 새로 생성한 한국어 번역 |
-| `improved_candidate_ko` | 평가 또는 검토 이후에 만든 후속 개선안 |
+| `candidate_ko` | `gpt-5.4-mini`가 만든 빠른 1차 한국어 번역 |
+| `improved_candidate_ko` | `gpt-5.4`가 1차 후보를 다듬은 후속 개선안 |
 | `reviewed_golden` | 회귀 테스트나 심화 평가용으로 사람이 검토해 둘 수 있는 예시 |
 
 중요한 원칙:
@@ -54,7 +55,7 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 
 이 저장소는 현재 서로 호환되는 두 가지 평가 레이어를 가집니다.
 
-- 공식 문서 쌍 평가: 현재 Phase 1 `openai.com` 페이지 쌍에 대해 `candidate_ko`를 공식 `reference_ko`와 비교
+- 공식 문서 쌍 평가: 현재 Phase 1 `openai.com` 페이지 쌍에 대해 `candidate_ko` 또는 `improved_candidate_ko`를 공식 `reference_ko`와 비교
 - golden 예시 평가: `docs/golden/` 아래의 단어, 문장, 문단 example bank 중 `reviewed_golden_candidate`로 표시된 소규모 target만 골라 생성 결과와 비교
 
 핵심 정량 신호는 OpenAI가 제안한 방향과 맞춰져 있습니다.
@@ -64,6 +65,7 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
   경량 회귀 체크에서는 curated golden 한국어가 target입니다.
 - backtranslation cosine similarity: `source_en`과 생성 한국어를 다시 영어로 옮긴 결과를 비교
 - 비교용 메타데이터: `run_label`, `pipeline_label`, `prompt_label` 같은 값을 남겨 두어 이후 모델, 프롬프트, 파이프라인 비교에 활용
+- 두 단계 번역 provenance: first-pass는 `generation_model`, rewrite는 `rewrite_model`로 구분해 남겨 이후 비교에 활용
 
 구분해야 할 점:
 
@@ -79,17 +81,18 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 
 ## Codex가 사용되는 위치
 
-- Candidate 생성: 정렬된 `source_en` 블록에서 `candidate_ko` 생성
+- 1차 Candidate 생성: 정렬된 `source_en` 블록에서 `gpt-5.4-mini`로 `candidate_ko` 생성
+- Rewrite 단계: `gpt-5.4`로 `candidate_ko`를 `improved_candidate_ko`로 다듬기
 - 평가 워크플로 지원: backtranslation, LLM judging, 점수화, 보고서 생성
-- 반복 개선 경로: 작은 golden-set 체크를 유지하면서 `candidate_ko -> evaluation -> improved_candidate_ko -> human review` 방향을 지원
+- 반복 개선 경로: 작은 golden-set 체크를 유지하면서 `candidate_ko -> improved_candidate_ko -> evaluation -> human review` 방향을 지원
 
 ## Improvement-Loop 방향
 
-현재 Phase 1 MVP는 먼저 raw `candidate_ko` 평가를 검증하는 데 집중합니다. 다음 단계는 아래와 같은 경량 개선 경로입니다.
+현재 Phase 1 MVP는 먼저 raw `candidate_ko` 평가를 검증했고, 이제 두 단계 번역 경로를 명시적으로 지원합니다. 현재 권장 경로는 아래와 같습니다.
 
-- `candidate_ko` 평가
-- 필요하면 `improved_candidate_ko` 생성
-- 필요하면 다시 평가
+- `gpt-5.4-mini`로 `candidate_ko` 생성
+- `gpt-5.4`로 `improved_candidate_ko` 생성
+- `candidate_ko`와 `improved_candidate_ko`를 각각 평가하거나, improved 버전만 선택해 평가
 - 사람이 검토한 항목만 `reviewed_golden` 후보로 승격
 
 이 다음 단계 역시 같은 cosine similarity, backtranslation, reviewed-golden 체크와 호환됩니다.
@@ -103,9 +106,10 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 - `OPENAI_API_KEY` 설정
 - `pip install -r requirements.txt`
 
-현재 권장 MVP 데모 설정:
+현재 권장 Phase 1 두 단계 데모 설정:
 
 - `generation_model`: `gpt-5.4-mini`
+- `rewrite_model`: `gpt-5.4`
 - `backtranslation_model`: `gpt-5.4-mini`
 - `judge_model`: `gpt-5.4-mini`
 
@@ -115,14 +119,18 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 python -X utf8 collect_pair.py --slug why-we-no-longer-evaluate-swe-bench-verified --source-url https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/ --reference-url https://openai.com/ko-KR/index/why-we-no-longer-evaluate-swe-bench-verified/
 python -X utf8 align_units.py --slug why-we-no-longer-evaluate-swe-bench-verified
 python -X utf8 generate_candidate.py --input data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.json --model gpt-5.4-mini
-python -X utf8 run_eval.py --input data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.json --backtranslation-model gpt-5.4-mini --judge-model gpt-5.4-mini --embedding-model text-embedding-3-small
-python -X utf8 build_report.py --input reports/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.eval.json --output reports/why-we-no-longer-evaluate-swe-bench-verified.report.md
+python -X utf8 run_eval.py --input data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.json --candidate-field candidate_ko --backtranslation-model gpt-5.4-mini --judge-model gpt-5.4-mini --embedding-model text-embedding-3-small --output reports/why-we-no-longer-evaluate-swe-bench-verified.first-pass.eval.json
+python -X utf8 improve_candidate.py --input data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.json --eval-input reports/why-we-no-longer-evaluate-swe-bench-verified.first-pass.eval.json --model gpt-5.4 --output data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.improved.json
+python -X utf8 run_eval.py --input data/processed/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.improved.json --candidate-field improved_candidate_ko --backtranslation-model gpt-5.4-mini --judge-model gpt-5.4-mini --embedding-model text-embedding-3-small --output reports/why-we-no-longer-evaluate-swe-bench-verified.improved.eval.json
+python -X utf8 build_report.py --input reports/why-we-no-longer-evaluate-swe-bench-verified.improved.eval.json --compare-input reports/why-we-no-longer-evaluate-swe-bench-verified.first-pass.eval.json --output reports/why-we-no-longer-evaluate-swe-bench-verified.report.md
 ```
 
 참고:
 
 - `collect_pair.py`는 현재 `openai.com` 페이지에 대해 Chrome 기반 비헤드리스 실행이 가장 안전합니다.
-- 스크립트 기본값도 `gpt-5.4-mini`를 가리키지만, 검토자가 보기에 명확하도록 위 명령에서는 권장 설정을 명시적으로 적었습니다.
+- `gpt-5.4-mini`는 빠른 1차 baseline 생성용, `gpt-5.4`는 한국어 품질 재작성용으로 역할을 분리합니다.
+- `run_eval.py`는 `--candidate-field candidate_ko`와 `--candidate-field improved_candidate_ko`를 모두 지원합니다.
+- `build_report.py --compare-input ...`를 사용하면 first-pass와 improved eval을 나란히 비교하는 before/after 보고서를 만들 수 있습니다.
 - Windows에서는 `python -X utf8` 대신 `py -3 -X utf8`를 써도 됩니다.
 
 ## Golden Example Checks
@@ -161,13 +169,18 @@ python -X utf8 run_golden_eval.py --golden-set paragraphs --input path/to/candid
 
 현재 데모 문서 쌍에 대한 샘플 산출물은 `docs/pairs/`, `data/processed/`, `reports/` 아래에 유지됩니다.
 
-체크인된 샘플 candidate, evaluation, report 산출물은 현재 Phase 1 MVP 데모 설정 기준으로 갱신되어 있습니다.
+체크인된 샘플 candidate, evaluation, report 산출물은 현재 first-pass Phase 1 MVP 데모 설정 기준으로 갱신되어 있습니다.
 
 - `generation_model`: `gpt-5.4-mini`
 - `backtranslation_model`: `gpt-5.4-mini`
 - `judge_model`: `gpt-5.4-mini`
 
 현재 체크인된 데모 실행의 provenance는 각 산출물에 기록된 timestamp와 metadata를 기준으로 봐야 합니다.
+
+주의:
+
+- 현재 체크인된 샘플은 first-pass `candidate_ko` 기반 실행을 반영합니다.
+- 새 `improve_candidate.py` rewrite 단계는 코드와 문서에 추가되었지만, 이 턴에서는 live `gpt-5.4` 실행을 다시 돌려 improved sample artifact를 체크인하지는 않았습니다.
 
 주요 샘플 파일:
 
