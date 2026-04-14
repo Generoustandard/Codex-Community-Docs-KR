@@ -43,9 +43,10 @@ JUDGE_SCHEMA = {
                         "type": "array",
                         "items": {"type": "string"},
                     },
+                    "needs_human_review": {"type": "boolean"},
                     "suggested_revision": {"type": "string"},
                 },
-                "required": ["id", "llm_judge_score", "issues", "suggested_revision"],
+                "required": ["id", "llm_judge_score", "issues", "needs_human_review", "suggested_revision"],
                 "additionalProperties": False,
             },
         }
@@ -64,9 +65,115 @@ POSITIVE_ISSUE_PATTERNS = (
 )
 
 
+def _candidate_text(record: dict, candidate_field: str) -> str:
+    candidate = record.get(candidate_field)
+    if not candidate or not isinstance(candidate, str):
+        raise ValueError(f"Missing string field '{candidate_field}' for {record.get('id', 'unknown-record')}")
+    return candidate
+
+
+def _optional_text(record: dict, field: str) -> str | None:
+    value = record.get(field)
+    if isinstance(value, str) and value.strip():
+        return value.strip()
+    return None
+
+
 def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]]:
     response = client.embeddings.create(model=model, input=texts)
     return [item.embedding for item in response.data]
+
+
+def _backfill_missing_backtranslations(
+    client,
+    *,
+    model: str,
+    instructions: str,
+    batch: list[dict],
+    backtranslated_by_id: dict[str, str],
+    max_attempts: int = 3,
+) -> None:
+    requested_ids = {record["id"] for record in batch}
+    missing_ids = requested_ids - backtranslated_by_id.keys()
+    attempts = 0
+
+    while missing_ids and attempts < max_attempts:
+        payload = {
+            "items": [
+                {
+                    "id": record["id"],
+                    "candidate_ko": record["candidate_ko"],
+                }
+                for record in batch
+                if record["id"] in missing_ids
+            ]
+        }
+        result = invoke_json_model(
+            client,
+            model=model,
+            instructions=instructions,
+            payload=payload,
+            schema_name="backtranslation_retry_batch",
+            schema=BACKTRANSLATION_SCHEMA,
+            max_output_tokens=5000,
+        )
+        for item in result["backtranslations"]:
+            item_id = item["id"]
+            if item_id in missing_ids:
+                backtranslated_by_id[item_id] = item["backtranslated_en"].strip()
+        missing_ids = requested_ids - backtranslated_by_id.keys()
+        attempts += 1
+
+    if missing_ids:
+        raise ValueError(f"Missing backtranslations after retries: {sorted(missing_ids)}")
+
+
+def _backfill_missing_judgments(
+    client,
+    *,
+    model: str,
+    instructions: str,
+    batch: list[dict],
+    backtranslated_by_id: dict[str, str],
+    judgments_by_id: dict[str, dict],
+    max_attempts: int = 3,
+) -> None:
+    requested_ids = {record["id"] for record in batch}
+    missing_ids = requested_ids - judgments_by_id.keys()
+    attempts = 0
+
+    while missing_ids and attempts < max_attempts:
+        payload = {
+            "items": [
+                {
+                    "id": record["id"],
+                    "source_en": record["source_en"],
+                    "reference_ko": record["reference_ko"],
+                    "candidate_ko": record["candidate_ko"],
+                    "backtranslated_en": backtranslated_by_id[record["id"]],
+                }
+                for record in batch
+                if record["id"] in missing_ids
+            ]
+        }
+        result = invoke_json_model(
+            client,
+            model=model,
+            instructions=instructions,
+            payload=payload,
+            schema_name="llm_judge_retry_batch",
+            schema=JUDGE_SCHEMA,
+            max_output_tokens=7000,
+        )
+        for item in result["judgments"]:
+            item_id = item["id"]
+            if item_id in missing_ids:
+                judgments_by_id[item_id] = item
+        missing_ids = requested_ids - judgments_by_id.keys()
+        attempts += 1
+
+    if missing_ids:
+        raise ValueError(f"Missing LLM judgments after retries: {sorted(missing_ids)}")
 
 
 def _filter_issues(issues: list[str]) -> list[str]:
@@ -113,19 +220,27 @@ def _build_summary(records: list[dict]) -> dict:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="Run the official document-pair evaluation pipeline on generated candidate translations.",
+        description="생성된 candidate 번역에 대해 공식 문서 쌍 평가 파이프라인을 실행합니다.",
     )
-    parser.add_argument("--input", required=True, help="Candidate JSON created by generate_candidate.py.")
+    parser.add_argument("--input", required=True, help="`generate_candidate.py`가 만든 candidate JSON 경로.")
     parser.add_argument(
         "--output",
         default=None,
-        help="Output path. Defaults to reports/<input-stem>.eval.json",
+        help="출력 경로. 기본값은 `reports/<input-stem>.eval.json`입니다.",
     )
-    parser.add_argument("--backtranslation-model", default="gpt-4.1-mini")
-    parser.add_argument("--judge-model", default="gpt-4.1-mini")
+    parser.add_argument("--backtranslation-model", default="gpt-5.4-mini")
+    parser.add_argument("--judge-model", default="gpt-5.4-mini")
     parser.add_argument("--embedding-model", default="text-embedding-3-small")
+    parser.add_argument(
+        "--candidate-field",
+        default="candidate_ko",
+        help="평가할 record field. 후속 개선안을 평가할 때는 `improved_candidate_ko`를 사용합니다.",
+    )
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--judge-batch-size", type=int, default=5)
+    parser.add_argument("--run-label", default=None, help="여러 평가 실행을 비교하기 위한 optional label.")
+    parser.add_argument("--pipeline-label", default=None, help="평가 대상 파이프라인을 구분하기 위한 optional label.")
+    parser.add_argument("--prompt-label", default=None, help="프롬프트 계열을 구분하기 위한 optional label.")
     args = parser.parse_args()
 
     input_path = Path(args.input)
@@ -143,7 +258,7 @@ def main() -> None:
             "items": [
                 {
                     "id": record["id"],
-                    "candidate_ko": record["candidate_ko"],
+                    "candidate_ko": _candidate_text(record, args.candidate_field),
                 }
                 for record in batch
             ]
@@ -159,12 +274,21 @@ def main() -> None:
         )
         for item in result["backtranslations"]:
             backtranslated_by_id[item["id"]] = item["backtranslated_en"].strip()
+        _backfill_missing_backtranslations(
+            client,
+            model=args.backtranslation_model,
+            instructions=backtranslation_instructions,
+            batch=batch,
+            backtranslated_by_id=backtranslated_by_id,
+        )
 
     judge_instructions = (
         "You are evaluating Korean technical translations for an official OpenAI-style publication. "
         "For each item, compare source_en, reference_ko, candidate_ko, and backtranslated_en. "
         "Assign one llm_judge_score on a 0-100 scale using this rubric: accuracy 40, naturalness 20, terminology consistency 20, style fit 20. "
         "Return at most 3 concise issues. "
+        "Set needs_human_review to true only if the item contains a high-severity wording, terminology, or accuracy problem that should be manually reviewed. "
+        "Set needs_human_review to false for minor style nits or acceptable alternatives. "
         "Return suggested_revision in Korean. If the candidate is already strong, suggested_revision may equal candidate_ko. "
         "Return only the requested JSON schema."
     )
@@ -176,7 +300,7 @@ def main() -> None:
                     "id": record["id"],
                     "source_en": record["source_en"],
                     "reference_ko": record["reference_ko"],
-                    "candidate_ko": record["candidate_ko"],
+                    "candidate_ko": _candidate_text(record, args.candidate_field),
                     "backtranslated_en": backtranslated_by_id[record["id"]],
                 }
                 for record in batch
@@ -193,10 +317,22 @@ def main() -> None:
         )
         for item in result["judgments"]:
             judgments_by_id[item["id"]] = item
+        _backfill_missing_judgments(
+            client,
+            model=args.judge_model,
+            instructions=judge_instructions,
+            batch=batch,
+            backtranslated_by_id=backtranslated_by_id,
+            judgments_by_id=judgments_by_id,
+        )
 
     source_embeddings = _create_embeddings(client, args.embedding_model, [record["source_en"] for record in records])
     reference_embeddings = _create_embeddings(client, args.embedding_model, [record["reference_ko"] for record in records])
-    candidate_embeddings = _create_embeddings(client, args.embedding_model, [record["candidate_ko"] for record in records])
+    candidate_embeddings = _create_embeddings(
+        client,
+        args.embedding_model,
+        [_candidate_text(record, args.candidate_field) for record in records],
+    )
     backtranslated_embeddings = _create_embeddings(
         client,
         args.embedding_model,
@@ -205,11 +341,12 @@ def main() -> None:
 
     evaluated_records = []
     for index, record in enumerate(records):
+        candidate_text = _candidate_text(record, args.candidate_field)
         semantic_cosine = cosine_similarity(reference_embeddings[index], candidate_embeddings[index])
         backtranslation_cosine = cosine_similarity(source_embeddings[index], backtranslated_embeddings[index])
         terminology_score, terminology_issues, terminology_details = score_terminology(
             source_en=record["source_en"],
-            candidate_ko=record["candidate_ko"],
+            candidate_ko=candidate_text,
         )
 
         judgment = judgments_by_id.get(record["id"])
@@ -220,36 +357,54 @@ def main() -> None:
             "id": record["id"],
             "source_en": record["source_en"],
             "reference_ko": record["reference_ko"],
-            "candidate_ko": record["candidate_ko"],
+            "candidate_ko": _optional_text(record, "candidate_ko") or candidate_text,
+            "evaluated_candidate_ko": candidate_text,
             "backtranslated_en": backtranslated_by_id[record["id"]],
             "semantic_similarity_score": cosine_to_score(semantic_cosine),
             "backtranslation_similarity_score": cosine_to_score(backtranslation_cosine),
             "terminology_consistency_score": terminology_score,
             "llm_judge_score": round(max(0.0, min(100.0, float(judgment["llm_judge_score"]))), 1),
             "issues": [],
+            "judge_needs_human_review": bool(judgment["needs_human_review"]),
             "suggested_revision": judgment["suggested_revision"].strip(),
             "metadata": {
                 "unit_type": record.get("unit_type"),
                 "tag": record.get("source_meta", {}).get("tag"),
                 "pair_slug": record.get("source_meta", {}).get("pair_slug"),
+                "candidate_source_field": args.candidate_field,
                 "terminology_details": terminology_details,
             },
         }
+        improved_candidate = _optional_text(record, "improved_candidate_ko")
+        if improved_candidate:
+            merged["improved_candidate_ko"] = improved_candidate
         merged["issues"] = _filter_issues(
             terminology_issues + [issue.strip() for issue in judgment["issues"] if issue.strip()]
         )
         merged["overall_score"] = compute_overall_score(merged)
         merged["review_reasons"] = review_reasons(merged)
+        if merged["judge_needs_human_review"]:
+            merged["review_reasons"].append("llm_judge_flagged")
+        merged["review_reasons"] = list(dict.fromkeys(merged["review_reasons"]))
         merged["needs_human_review"] = bool(merged["review_reasons"])
         evaluated_records.append(merged)
 
     output_path = Path(args.output or f"reports/{input_path.stem}.eval.json")
+    output_meta = dict(meta)
+    if args.run_label:
+        output_meta["run_label"] = args.run_label
+    if args.pipeline_label:
+        output_meta["pipeline_label"] = args.pipeline_label
+    if args.prompt_label:
+        output_meta["prompt_label"] = args.prompt_label
     save_json(
         output_path,
         {
-            **meta,
+            **output_meta,
             "evaluated_at": utc_timestamp(),
             "config": {
+                "candidate_field": args.candidate_field,
+                "evaluated_stage": "rewrite" if args.candidate_field == "improved_candidate_ko" else "first_pass",
                 "backtranslation_model": args.backtranslation_model,
                 "judge_model": args.judge_model,
                 "embedding_model": args.embedding_model,
@@ -266,7 +421,7 @@ def main() -> None:
         },
     )
 
-    print(f"Wrote {len(evaluated_records)} evaluation records to {output_path}")
+    print(f"{len(evaluated_records)}개의 평가 결과를 {output_path}에 저장했습니다.")
 
 
 if __name__ == "__main__":
