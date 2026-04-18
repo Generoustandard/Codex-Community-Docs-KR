@@ -6,8 +6,8 @@ from pathlib import Path
 
 DATA_FILES = ("words.json", "sentences.json", "paragraphs.json")
 REQUIRED_FIELDS = {"id", "source_en", "improved_ko", "notes", "tags", "target_role", "review_status"}
-TARGET_ROLES = {"reviewed_golden_candidate", "example_only"}
-REVIEW_STATUSES = {"pending_human_review", "example_bank"}
+TARGET_ROLES = {"approved_reviewed_golden", "reviewed_golden_candidate", "example_only"}
+REVIEW_STATUSES = {"maintainer_approved", "pending_human_review", "example_bank"}
 
 
 def _resolve_golden_dir(base_dir: str | Path) -> Path:
