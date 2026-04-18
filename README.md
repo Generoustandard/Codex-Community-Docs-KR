@@ -56,7 +56,7 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 이 저장소는 현재 서로 호환되는 두 가지 평가 레이어를 가집니다.
 
 - 공식 문서 쌍 평가: 현재 Phase 1 `openai.com` 페이지 쌍에 대해 `candidate_ko` 또는 `improved_candidate_ko`를 공식 `reference_ko`와 비교
-- golden 예시 평가: `docs/golden/` 아래의 단어, 문장, 문단 example bank 중 `reviewed_golden_candidate`로 표시된 소규모 target만 골라 생성 결과와 비교
+- golden 예시 평가: `docs/golden/` 아래의 example bank 중 maintainer-approved `reviewed_golden` subset을 우선 읽고, 아직 승인되지 않은 `reviewed_golden_candidate`는 future-curated 후보로 유지
 
 핵심 정량 신호는 OpenAI가 제안한 방향과 맞춰져 있습니다.
 
@@ -71,7 +71,7 @@ Phase 2는 현재 MVP가 아니라, 같은 프레임워크의 다음 확장 단�
 
 - `reference_ko`는 현재 Phase 1 공식 페이지 평가를 위한 페이지 단위 reference입니다.
 - `reviewed_golden`은 sanity check와 regression-style comparison을 위한 소규모 curated evaluation target입니다.
-- `docs/golden/*.json`의 나머지 항목은 example bank이며, 현재 평가 target이 아닙니다.
+- `docs/golden/*.json` 안에는 approved reviewed-golden subset, 아직 승인 전인 `reviewed_golden_candidate`, example bank가 함께 존재할 수 있습니다.
 - raw `candidate_ko`나 `improved_candidate_ko`는 자동으로 golden 취급하지 않습니다.
 
 ## 현재 데모 문서 쌍
@@ -143,7 +143,7 @@ curated 또는 future-curated reviewed-golden 레이어는 [docs/golden/README.m
 
 이 예시들은 Phase 1 공식 페이지 reference를 대체하는 것이 아니라, 경량 비교와 회귀 체크를 위한 평가 자산입니다.
 
-현재는 각 파일 전체를 evaluation target으로 쓰지 않고, `target_role: reviewed_golden_candidate`로 표시된 7개 항목만 review target 후보로 사용합니다. 나머지 항목은 `example_only` 상태의 example bank로 남겨 둡니다.
+현재는 각 파일 전체를 evaluation target으로 쓰지 않습니다. `target_role: approved_reviewed_golden`이 있으면 그 small approved subset을 우선 사용하고, 아직 approved subset이 없는 파일에서는 `reviewed_golden_candidate`를 future-curated fallback target으로 사용합니다. 나머지 항목은 `example_only` 상태의 example bank로 남겨 둡니다.
 
 예시 golden-set 실행:
 
@@ -159,11 +159,11 @@ python -X utf8 run_golden_eval.py --golden-set paragraphs --input path/to/candid
 
 ## Human Review Artifact
 
-최소 human review artifact는 [reviews/phase1_pair_review.md](reviews/phase1_pair_review.md)에 정리합니다.
+Phase 1 pair review artifact는 [reviews/phase1_pair_review.md](reviews/phase1_pair_review.md)에 정리합니다.
 
-- 이 파일은 현재 Phase 1 pair eval에서 사람이 다시 봐야 할 블록을 모아 둔 review worksheet입니다.
+- 이 파일은 현재 maintainer-reviewed paragraph subset과 review context를 함께 보존하는 worksheet입니다.
 - `source_en`, `reference_ko`, `candidate_ko`, `decision`, `reviewed_golden_ko`, `notes`를 함께 기록합니다.
-- 여기 적힌 `reviewed_golden_ko`는 maintainer 확인 전까지 draft 제안값이며, 자동으로 승격되지 않습니다.
+- `decision: manual_rewrite_approved`인 항목의 `reviewed_golden_ko`는 maintainer-approved text이며, paragraph-level `reviewed_golden` 승격의 source-of-truth로 사용합니다.
 
 ## 체크인된 샘플 산출물
 

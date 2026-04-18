@@ -33,7 +33,7 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 1. Phase 1 MVP의 공식 문서 쌍 평가
    `candidate_ko` 또는 `improved_candidate_ko`를 공식 페이지 단위 `reference_ko`와 비교합니다.
 2. 회귀 체크와 비교를 위한 경량 golden-example 평가
-   `docs/golden/` 아래의 example bank 중 `reviewed_golden_candidate`로 표시된 소규모 target만 골라 생성 결과와 단어, 문장, 문단 수준에서 비교합니다.
+   `docs/golden/` 아래의 example bank에서 `approved_reviewed_golden` subset을 우선 사용하고, 승인된 subset이 없는 파일에서는 `reviewed_golden_candidate`를 fallback target으로 사용해 단어, 문장, 문단 수준에서 비교합니다.
 
 이 구조는 다음 방향을 유지합니다.
 
@@ -314,13 +314,18 @@ curated 또는 future-curated golden 자산은 `docs/golden/` 아래에 있으�
 
 - `improved_ko`는 현재 golden 예시의 한국어 target이며, 경량 회귀 체크에서는 reviewed golden 텍스트 역할을 합니다.
 - `bad_ko`는 대비를 위한 contrastive example일 뿐입니다. candidate run도 아니고 golden target도 아닙니다.
-- `target_role = reviewed_golden_candidate`인 항목만 현재 경량 golden evaluation target입니다.
+- `target_role = approved_reviewed_golden`인 항목은 현재 maintainer-approved reviewed-golden subset입니다.
+- `target_role = reviewed_golden_candidate`인 항목은 future-curated candidate이며, 승인된 subset이 없는 파일에서만 fallback target이 됩니다.
 - `target_role = example_only`인 항목은 유지하지만, 현재 평가 target으로는 사용하지 않습니다.
+- `review_status = maintainer_approved`는 승인된 reviewed-golden subset을 뜻합니다.
+- `review_status = pending_human_review`는 아직 최종 승인되지 않은 candidate를 뜻합니다.
+- `review_status = example_bank`는 설명용 example bank를 뜻합니다.
 - 이 파일들은 공식 문서 쌍 평가에서 쓰는 페이지 단위 `reference_ko`와는 별개입니다.
 
 `run_golden_eval.py`는 이 세트들을 위한 경량 machine-readable evaluation 경로를 제공합니다. 지원 범위는 다음과 같습니다.
 
-- 각 golden 파일에서 `reviewed_golden_candidate`로 표시된 항목만 선택
+- 각 golden 파일에서 `approved_reviewed_golden`이 있으면 그 subset을 우선 선택
+- 승인된 subset이 없는 파일에서는 `reviewed_golden_candidate`를 fallback으로 선택
 - `source_en`에서 fresh candidate 생성
 - 기존 candidate 파일 불러오기
 - `candidate_ko` 또는 `improved_candidate_ko` 필드 선택 비교
@@ -341,11 +346,11 @@ curated 또는 future-curated golden 자산은 `docs/golden/` 아래에 있으�
 
 ## Minimal Human Review Artifact
 
-`reviews/phase1_pair_review.md`는 Phase 1 문서 쌍에서 사람이 확인해야 할 최소 review worksheet입니다.
+`reviews/phase1_pair_review.md`는 Phase 1 문서 쌍에서 유지보수자 검토가 끝난 reviewed subset과 review context를 함께 보존하는 worksheet입니다.
 
 - 포함 항목: `source_en`, `reference_ko`, `candidate_ko`, `decision`, `reviewed_golden_ko`, `notes`
-- 목적: 자동 eval 결과만으로는 승격할 수 없는 항목을 사람이 다시 보는 것
-- 주의: 이 파일의 `reviewed_golden_ko`는 maintainer 확인 전까지 draft 제안값이며, 자동으로 `reviewed_golden`으로 취급하지 않습니다.
+- 목적: 어떤 문장이 maintainer-approved reviewed-golden으로 승격되었는지와 그 review context를 함께 남기는 것
+- 주의: `candidate_ko`와 `improved_candidate_ko`는 여전히 golden이 아니며, `decision: manual_rewrite_approved`로 확정된 `reviewed_golden_ko`만 현재 approved reviewed-golden source로 취급합니다.
 
 ## 비교용 메타데이터
 

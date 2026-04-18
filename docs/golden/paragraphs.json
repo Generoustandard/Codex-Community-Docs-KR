@@ -49,5 +49,197 @@
     ],
     "target_role": "example_only",
     "review_status": "example_bank"
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-013",
+    "source_en": "The model does not see the tests. It has to produce a code change given only the original issue text and the state of the repository before the fix. It passes a problem only if all tests pass after the code change is applied.",
+    "reference_ko": "모델에게는 이 테스트 코드가 제공되지 않습니다. 원본 이슈 텍스트와 수정 전 리포지터리 상태만 주어진 환경에서 코드 수정안을 생성해야 합니다. 코드 변경 사항이 적용된 후 모든 테스트를 통과해야만 해당 문제를 통과한 것으로 간주됩니다.",
+    "bad_ko": "모델은 테스트를 보지 못합니다. 원래 이슈 텍스트와 수정 전 저장소의 상태만을 바탕으로 코드 변경을 만들어야 합니다. 코드 변경을 적용한 뒤 모든 테스트가 통과해야만 해당 문제를 해결한 것으로 간주됩니다.",
+    "improved_ko": "모델에는 테스트 코드가 제공되지 않으며, 원본 이슈 내용과 수정 전 저장소 상태만을 바탕으로 코드 변경을 생성해야 합니다. 변경 사항을 적용한 후 모든 테스트를 통과해야만 해당 문제가 해결된 것으로 간주됩니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`테스트 코드`를 명시해 원문의 구체성을 유지했습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "tests",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-013",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-003",
+    "source_en": "In a new analysis, we found two major issues with the Verified set that indicate the benchmark is no longer suitable for measuring progress on autonomous software engineering capabilities for frontier launches at today’s performance levels:",
+    "reference_ko": "새로운 분석 결과, Verified 데이터세트에서 두 가지 주요 문제를 발견했습니다. 이는 현재의 성능 수준에서 프런티어 모델 출시에 수반되는 자율 소프트웨어 엔지니어링 역량 발전을 측정하는 데 해당 벤치마크가 더 이상 적합하지 않음을 시사합니다.",
+    "bad_ko": "새로운 분석에서 우리는 Verified 세트에 두 가지 주요 문제가 있음을 확인했으며, 이는 이 벤치마크가 더 이상 오늘날의 성능 수준에서 최첨단 출시를 위한 자율 소프트웨어 엔지니어링 역량의 진전을 측정하는 데 적합하지 않음을 시사합니다:",
+    "improved_ko": "새로운 분석 결과, Verified 세트에서 두 가지 주요 문제가 확인되었습니다. 이는 이 벤치마크가 현재 성능 수준에서 프런티어 모델 출시에 필요한 자율 소프트웨어 엔지니어링 역량 향상을 측정하는 데 더 이상 적합하지 않음을 시사합니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`frontier launches` 처리와 문장 리듬을 official publication tone에 맞게 다듬었습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "benchmark",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-003",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-017",
+    "source_en": "Depending on setup of the environment (for example Linux vs Windows, or the python version), some tests could spuriously fail",
+    "reference_ko": "환경 설정(예: Linux와 Windows의 차이, 또는 Python 버전)에 따라 일부 테스트가 실제 오류가 없는데도 실패할 수 있었습니다.",
+    "bad_ko": "환경 설정에 따라(예: Linux vs Windows, 또는 python 버전) 일부 테스트가 우연히 실패할 수 있습니다",
+    "improved_ko": "환경 설정(예: Linux와 Windows의 차이 또는 Python 버전)에 따라 일부 테스트는 실제 오류가 없는데도 실패할 수 있습니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`오탐` 대신 설명형 표현을 사용해 원문 의미와 시제 일관성을 유지했습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "environment",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-017",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-024",
+    "source_en": "The remaining 5.1% of tasks had miscellaneous issues that were not well grouped with this taxonomy.",
+    "reference_ko": "나머지 5.1%의 작업에는 이 분류 기준에 명확하게 속하지 않는 기타 문제가 있었습니다.",
+    "bad_ko": "나머지 5.1%의 작업에는 이 분류 체계로는 잘 묶이지 않는 기타 문제가 있었습니다.",
+    "improved_ko": "나머지 5.1%의 작업에는 이 분류 기준에 명확히 속하지 않는 문제가 있었습니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`taxonomy`와 grouping 의미를 더 직접적으로 전달하도록 문장을 압축했습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "taxonomy",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-024",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-012",
+    "source_en": "Regression tests that pass both before and after the fix to ensure unrelated functionality remains intact.",
+    "reference_ko": "버그 수정과 무관한 기존 기능이 손상되지 않고 유지됨을 보장하기 위해, 수정 전후에 모두 통과해야 하는 회귀 테스트",
+    "bad_ko": "수정 전과 후 모두 통과하여, 관련 없는 기능이 그대로 유지되는지 확인하는 회귀 테스트",
+    "improved_ko": "수정과 무관한 기존 기능이 유지되는지를 확인하기 위해, 수정 전후 모두 통과해야 하는 회귀 테스트입니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`ensure unrelated functionality remains intact` 의미를 더 직접적으로 드러내도록 다듬었습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "regression-test",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-012",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-019",
+    "source_en": "Too narrow and too wide tests",
+    "reference_ko": "너무 제한적이거나 너무 광범위한 테스트",
+    "bad_ko": "너무 좁고 너무 넓은 테스트",
+    "improved_ko": "지나치게 제한적이거나 지나치게 광범위한 테스트",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "짧은 표제형 문장에서 대비를 더 또렷하게 드러내도록 어휘 강도를 맞췄습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "test-scope",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-019",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-015",
+    "source_en": "Some unit tests were overly specific or misaligned with the task so correct fixes could be rejected.",
+    "reference_ko": "일부 단위 테스트는 지나치게 구체적이거나 작업 목적과 어긋나 있어, 올바른 수정안마저 거부될 수 있었습니다.",
+    "bad_ko": "일부 단위 테스트는 지나치게 구체적이거나 과제와 맞지 않아, 올바른 수정도 거부될 수 있었습니다.",
+    "improved_ko": "일부 단위 테스트는 지나치게 구체적이거나 작업 목적과 어긋나 있어, 올바른 수정안마저 거부될 수 있었습니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`task`를 문맥상 더 자연스러운 `작업 목적`으로 정리했습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "unit-test",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-015",
+      "decision": "manual_rewrite_approved"
+    }
+  },
+  {
+    "id": "why-we-no-longer-evaluate-swe-bench-verified.block-040",
+    "source_en": "Gemini 3 Flash, when given no further information regarding the task besides the ID, is able to output verbatim details from the task description and the gold patch. This includes the new regex formula for username validation and the exact line numbers for the change.",
+    "reference_ko": "Gemini 3 Flash는 작업 ID 외에 작업에 대한 추가 정보가 주어지지 않았음에도, 작업 설명과 골드 패치의 세부 내용을 글자 그대로 출력할 수 있습니다. 여기에는 사용자 이름 유효성 검사를 위한 새로운 정규식과 변경 사항의 정확한 줄 번호가 포함됩니다.",
+    "bad_ko": "Gemini 3 Flash는 과제 ID 외에 추가 정보가 전혀 주어지지 않아도, 과제 설명과 골드 패치의 세부 사항을 그대로 출력할 수 있습니다. 여기에는 사용자 이름 검증을 위한 새 regex 수식과 변경된 정확한 줄 번호가 포함됩니다.",
+    "improved_ko": "Gemini 3 Flash는 작업 ID 외에 추가 정보가 주어지지 않았음에도, 작업 설명과 골드 패치의 세부 내용을 그대로 출력할 수 있습니다. 여기에는 사용자 이름 유효성 검사를 위한 새로운 정규식과 변경 사항의 정확한 줄 번호가 포함됩니다.",
+    "notes": [
+      "reviews/phase1_pair_review.md에서 유지보수자 검토가 끝난 Phase 1 paragraph를 승격한 항목입니다.",
+      "`regex formula`와 줄 번호 표현을 publication-ready Korean으로 정리했습니다."
+    ],
+    "tags": [
+      "phase1-pair",
+      "gold-patch",
+      "paragraph"
+    ],
+    "target_role": "approved_reviewed_golden",
+    "review_status": "maintainer_approved",
+    "provenance": {
+      "review_source": "reviews/phase1_pair_review.md",
+      "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified",
+      "source_block_id": "why-we-no-longer-evaluate-swe-bench-verified.block-040",
+      "decision": "manual_rewrite_approved"
+    }
   }
 ]

@@ -59,7 +59,9 @@ UNIT_LEVELS = {
     "sentences": "sentence",
     "paragraphs": "paragraph",
 }
+APPROVED_TARGET_ROLE = "approved_reviewed_golden"
 REVIEW_TARGET_ROLE = "reviewed_golden_candidate"
+EXAMPLE_ONLY_ROLE = "example_only"
 
 
 def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]]:
@@ -67,14 +69,31 @@ def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]
     return [item.embedding for item in response.data]
 
 
-def _select_review_targets(records: list[dict], *, golden_set: str) -> tuple[list[dict], int]:
-    selected = [record for record in records if record.get("target_role") == REVIEW_TARGET_ROLE]
-    if not selected:
-        raise ValueError(
-            f"{golden_set} does not contain any records marked as '{REVIEW_TARGET_ROLE}'. "
-            "Mark a small reviewed subset before running golden evaluation."
-        )
-    return selected, len(records) - len(selected)
+def _select_review_targets(records: list[dict], *, golden_set: str) -> tuple[list[dict], dict[str, int | str]]:
+    approved = [record for record in records if record.get("target_role") == APPROVED_TARGET_ROLE]
+    pending_candidates = [record for record in records if record.get("target_role") == REVIEW_TARGET_ROLE]
+    example_only_count = sum(1 for record in records if record.get("target_role") == EXAMPLE_ONLY_ROLE)
+
+    if approved:
+        return approved, {
+            "selected_role": APPROVED_TARGET_ROLE,
+            "approved_reviewed_count": len(approved),
+            "pending_candidate_count": len(pending_candidates),
+            "example_only_count": example_only_count,
+        }
+
+    if pending_candidates:
+        return pending_candidates, {
+            "selected_role": REVIEW_TARGET_ROLE,
+            "approved_reviewed_count": 0,
+            "pending_candidate_count": len(pending_candidates),
+            "example_only_count": example_only_count,
+        }
+
+    raise ValueError(
+        f"{golden_set} does not contain any records marked as '{APPROVED_TARGET_ROLE}' or '{REVIEW_TARGET_ROLE}'. "
+        "Mark a small reviewed subset before running golden evaluation."
+    )
 
 
 def _retry_missing_backtranslations(
@@ -191,7 +210,7 @@ def _build_summary(records: list[dict], *, include_backtranslation: bool) -> dic
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="각 golden 파일에서 reviewed_golden_candidate로 표시된 항목만 대상으로 경량 평가를 실행합니다.",
+        description="각 golden 파일에서 approved reviewed-golden subset을 우선 사용하고, 없으면 reviewed_golden_candidate를 대상으로 경량 평가를 실행합니다.",
     )
     parser.add_argument("--golden-set", required=True, choices=sorted(UNIT_LEVELS))
     parser.add_argument(
@@ -221,7 +240,7 @@ def main() -> None:
 
     repo_root = Path(__file__).resolve().parent
     golden_pool = load_goldens(repo_root)[args.golden_set]
-    golden_records, example_only_count = _select_review_targets(golden_pool, golden_set=args.golden_set)
+    golden_records, selection_stats = _select_review_targets(golden_pool, golden_set=args.golden_set)
     client = build_client()
 
     input_meta: dict = {}
@@ -361,10 +380,13 @@ def main() -> None:
             "golden_target_field": "improved_ko",
             "evaluated_at": utc_timestamp(),
             "config": {
-                "selection_rule": f"target_role={REVIEW_TARGET_ROLE}",
+                "selection_rule": f"target_role={selection_stats['selected_role']}",
+                "selected_role": selection_stats["selected_role"],
                 "source_pool_count": len(golden_pool),
                 "review_target_count": len(golden_records),
-                "example_only_count": example_only_count,
+                "approved_reviewed_count": selection_stats["approved_reviewed_count"],
+                "pending_candidate_count": selection_stats["pending_candidate_count"],
+                "example_only_count": selection_stats["example_only_count"],
                 "source_mode": source_mode,
                 "candidate_field": args.candidate_field,
                 "generation_model": None if args.input else args.generation_model,
@@ -375,7 +397,7 @@ def main() -> None:
             "records": evaluated_records,
         },
     )
-    print(f"{len(evaluated_records)}개의 reviewed golden candidate 평가 결과를 {output_path}에 저장했습니다.")
+    print(f"{len(evaluated_records)}개의 reviewed golden 평가 결과를 {output_path}에 저장했습니다.")
 
 
 if __name__ == "__main__":
