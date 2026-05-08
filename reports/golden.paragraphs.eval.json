@@ -12,10 +12,18 @@
   "rewrite_output_field": "improved_candidate_ko",
   "rewrite_prompt_label": "quality_rewrite_official_openai_style_v1",
   "rewrite_hint_input": "reports/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.eval.json",
+  "post_generation_edits": [
+    {
+      "edited_at": "2026-05-08T02:26:38.9949411Z",
+      "id": "why-we-no-longer-evaluate-swe-bench-verified.block-005",
+      "field": "improved_candidate_ko",
+      "reason": "Maintainer wording review: replace awkward heading and clarify exam analogy while preserving source meaning."
+    }
+  ],
   "golden_set": "paragraphs",
   "unit_level": "paragraph",
   "golden_target_field": "reviewed_golden_ko",
-  "evaluated_at": "2026-04-26T10:51:07.995201+00:00",
+  "evaluated_at": "2026-05-08T02:30:11.331581+00:00",
   "config": {
     "selection_rule": "status=approved_reviewed_golden",
     "selected_status": "approved_reviewed_golden",
@@ -33,7 +41,7 @@
   "summary": {
     "count": 8,
     "average_candidate_vs_reviewed_golden_score": 90.4,
-    "average_source_vs_backtranslation_score": 88.7,
+    "average_source_vs_backtranslation_score": 87.9,
     "top_tags": [
       [
         "phase1-pair",
@@ -97,8 +105,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "The model cannot see the tests. Given only the original issue text and the repository state before the fix, it must generate a code change. The problem is considered solved only if all tests pass after the code changes are applied.",
-      "source_vs_backtranslation_score": 90.2
+      "backtranslated_en": "The model cannot see the tests. Given only the original issue text and the pre-fix repository state, it must generate a code change. The problem is considered passed only if all tests pass after the code changes are applied.",
+      "source_vs_backtranslation_score": 90.8
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-003",
@@ -119,8 +127,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "In a new analysis, we found two major problems with the Verified set. These show that, at current performance levels, this benchmark is no longer suitable for measuring progress in autonomous software engineering capabilities accompanying frontier model releases.",
-      "source_vs_backtranslation_score": 89.8
+      "backtranslated_en": "A new analysis found two major problems with the Verified set. These show that, at current performance levels, this benchmark is no longer suitable for measuring progress in autonomous software engineering capabilities accompanying frontier model releases.",
+      "source_vs_backtranslation_score": 89.0
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-017",
@@ -141,8 +149,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "Depending on the environment setup, such as Linux vs. Windows differences or Python version, some tests could fail for reasons unrelated to the actual issue.",
-      "source_vs_backtranslation_score": 86.8
+      "backtranslated_en": "Depending on the environment setup (for example, differences between Linux and Windows or the Python version), some tests could fail for reasons unrelated to the actual problem.",
+      "source_vs_backtranslation_score": 86.1
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-024",
@@ -185,8 +193,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "Regression tests that pass both before and after the fix, to ensure that unrelated existing functionality remains unchanged.",
-      "source_vs_backtranslation_score": 98.5
+      "backtranslated_en": "Regression tests that pass both before and after the change, to ensure that unrelated existing functionality is preserved.",
+      "source_vs_backtranslation_score": 91.6
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-019",
@@ -229,8 +237,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "Some unit tests were overly specific or misaligned with the task’s purpose, so they could reject even correct fixes.",
-      "source_vs_backtranslation_score": 95.5
+      "backtranslated_en": "Some unit tests were overly specific or misaligned with the task’s goal, so even correct fixes could be rejected.",
+      "source_vs_backtranslation_score": 96.8
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-040",
@@ -251,8 +259,8 @@
       "status": "approved_reviewed_golden",
       "target_role": "approved_reviewed_golden",
       "review_status": "maintainer_approved",
-      "backtranslated_en": "Gemini 3 Flash can reproduce the task description and the details of the gold patch even when given no additional information about the task other than its ID. This includes the new regular expression for username validation and the exact line numbers of the changes.",
-      "source_vs_backtranslation_score": 94.8
+      "backtranslated_en": "Gemini 3 Flash can output the task description and details of the gold patch verbatim even when given no additional information about the task other than its ID. This includes the new regular expression for username validation and the exact line numbers of the changes.",
+      "source_vs_backtranslation_score": 94.5
     }
   ]
 }

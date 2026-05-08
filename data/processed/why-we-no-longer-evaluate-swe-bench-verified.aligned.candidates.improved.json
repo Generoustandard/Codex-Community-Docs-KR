@@ -12,6 +12,14 @@
   "rewrite_output_field": "improved_candidate_ko",
   "rewrite_prompt_label": "quality_rewrite_official_openai_style_v1",
   "rewrite_hint_input": "reports/why-we-no-longer-evaluate-swe-bench-verified.aligned.candidates.eval.json",
+  "post_generation_edits": [
+    {
+      "edited_at": "2026-05-08T02:26:38.9949411Z",
+      "id": "why-we-no-longer-evaluate-swe-bench-verified.block-005",
+      "field": "improved_candidate_ko",
+      "reason": "Maintainer wording review: replace awkward heading and clarify exam analogy while preserving source meaning."
+    }
+  ],
   "records": [
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-001",
@@ -81,7 +89,7 @@
         "pair_slug": "why-we-no-longer-evaluate-swe-bench-verified"
       },
       "candidate_ko": "솔루션에 대한 학습: 대규모 frontier 모델은 학습 과정에서 정보를 습득할 수 있으므로, 평가 대상이 되는 문제와 솔루션으로 학습하지 않도록 하는 것이 중요합니다. 이는 시험 전에 학생들에게 예정된 시험의 문제와 답안을 공유하는 것과 비슷합니다. 학생들이 답을 암기하지는 않더라도, 답을 미리 본 학생들은 그렇지 않은 학생들보다 분명히 더 좋은 성과를 낼 것입니다. SWE-bench 문제는 많은 모델 제공업체가 학습 목적으로 사용하는 오픈소스 저장소에서 가져옵니다. 우리의 분석에서, 테스트한 모든 frontier 모델은 특정 과제에 대해 정답 기준으로 사용되는 원래의 사람이 작성한 버그 수정, 즉 gold patch, 또는 문제 설명의 구체적인 문구를 그대로 재현할 수 있었습니다. 이는 이들 모두가 학습 중 최소한 일부 문제와 솔루션을 본 적이 있음을 시사합니다.",
-      "improved_candidate_ko": "해답 학습: 대규모 프런티어 모델은 학습 과정에서 정보를 습득할 수 있으므로, 평가 대상이 되는 문제와 해답으로 모델을 절대 학습시키지 않는 것이 중요합니다. 이는 시험 전에 학생들에게 예정된 시험의 문제와 답안을 공유하는 것과 비슷합니다. 학생들이 답을 암기하지는 않더라도, 답을 미리 본 학생들은 그렇지 않은 학생들보다 분명히 더 좋은 성과를 낼 것입니다. SWE-bench 문제는 많은 모델 제공업체가 학습 목적으로 사용하는 오픈소스 저장소에서 가져옵니다. 이번 분석에서, 테스트한 모든 프런티어 모델은 정답 기준으로 사용되는 원래의 사람이 작성한 버그 수정, 즉 골드 패치, 또는 특정 과제의 문제 설명 세부 문구를 그대로 재현할 수 있었습니다. 이는 이들 모두가 학습 중 최소한 일부 문제와 해답을 본 적이 있음을 시사합니다."
+      "improved_candidate_ko": "정답 학습: 대규모 프런티어 모델은 학습 과정에서 정보를 습득할 수 있으므로, 평가 대상이 되는 문제와 정답으로 모델을 절대 학습시키지 않는 것이 중요합니다. 이는 시험 문제와 답안을 미리 공유하는 것과 비슷합니다. 학생들이 답을 암기하지는 않더라도, 답을 미리 본 학생들은 그렇지 않은 학생들보다 분명히 더 좋은 성과를 낼 것입니다. SWE-bench 문제는 많은 모델 제공업체가 학습 목적으로 사용하는 오픈소스 저장소에서 가져온 것입니다. 이번 분석에서 테스트한 모든 프런티어 모델은 정답 기준으로 사용되는, 사람이 작성한 원본 버그 수정인 골드 패치나 특정 과제의 문제 설명 세부 문구를 그대로 재현할 수 있었습니다. 이는 이들 모두가 학습 중 최소한 일부 문제와 정답을 본 적이 있음을 시사합니다."
     },
     {
       "id": "why-we-no-longer-evaluate-swe-bench-verified.block-006",

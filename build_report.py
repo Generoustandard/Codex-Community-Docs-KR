@@ -80,6 +80,7 @@ def _format_provenance(meta: dict, config: dict) -> str:
     pipeline_label = meta.get("pipeline_label")
     prompt_label = meta.get("prompt_label")
     rewrite_prompt_label = meta.get("rewrite_prompt_label")
+    post_generation_edits = meta.get("post_generation_edits", [])
     candidate_field = config.get("candidate_field")
     evaluated_stage = config.get("evaluated_stage")
     rewrite_source_field = meta.get("rewrite_source_field")
@@ -111,6 +112,12 @@ def _format_provenance(meta: dict, config: dict) -> str:
         lines.append(f"- prompt_label: `{prompt_label}`")
     if rewrite_prompt_label:
         lines.append(f"- rewrite_prompt_label: `{rewrite_prompt_label}`")
+    if post_generation_edits:
+        lines.append(f"- post_generation_edits: `{len(post_generation_edits)}`")
+        for edit in post_generation_edits:
+            lines.append(
+                f"- post_generation_edit: `{edit.get('id', 'unknown')}` `{edit.get('field', 'unknown')}` - {edit.get('reason', 'n/a')}"
+            )
 
     recorded_models = [generation_model, backtranslation_model, judge_model]
     rewrite_models = [rewrite_model]

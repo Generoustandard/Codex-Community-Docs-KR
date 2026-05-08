@@ -9,7 +9,7 @@ Demo pair:
 - English: https://openai.com/index/why-we-no-longer-evaluate-swe-bench-verified/
 - Korean: https://openai.com/ko-KR/index/why-we-no-longer-evaluate-swe-bench-verified/
 
-The current checked-in model-generated artifacts were refreshed with `gpt-5.5` on 2026-04-26. Human-reviewed golden examples were not regenerated or automatically changed.
+The current checked-in model-generated artifacts were refreshed with `gpt-5.5` on 2026-04-26. Human-reviewed golden examples were not regenerated or automatically changed. One maintainer wording edit was applied to `why-we-no-longer-evaluate-swe-bench-verified.block-005` after generation and is recorded in `post_generation_edits`.
 
 ## Current Pipeline
 
@@ -54,8 +54,8 @@ Improved candidate evaluation:
 
 - records: 46
 - average overall score: 96.5
-- average semantic similarity score: 95.8
-- average backtranslation similarity score: 94.4
+- average semantic similarity score: 95.7
+- average backtranslation similarity score: 94.3
 - average terminology consistency score: 100.0
 - average LLM judge score: 97.3
 - human-review flags: 0
@@ -65,7 +65,7 @@ Reviewed-golden paragraph check:
 - approved reviewed-golden records: 8
 - candidate field evaluated: `improved_candidate_ko`
 - average candidate-vs-reviewed-golden score: 90.4
-- average source-vs-backtranslation score: 88.7
+- average source-vs-backtranslation score: 87.9
 
 ## Human Review Boundary
 
@@ -81,6 +81,7 @@ Reviewed-golden paragraph check:
 - Verified script syntax for `generate_candidate.py`, `improve_candidate.py`, `run_eval.py`, `build_report.py`, `run_golden_eval.py`, and `evals/golden_loader.py`.
 - Verified checked-in generated artifacts use `gpt-5.5` for generation, rewrite, backtranslation, and judging.
 - Verified the improved candidate artifact contains both `candidate_ko` and `improved_candidate_ko`.
+- Verified `post_generation_edits` records the maintainer wording edit for block 005.
 - Verified the improved evaluation evaluates `candidate_field = improved_candidate_ko`.
 - Verified the golden paragraph eval uses `golden_target_field = reviewed_golden_ko`.
 - Verified no older model references remain in the external-facing docs, scripts, or refreshed artifacts.
