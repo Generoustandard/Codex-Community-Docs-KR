@@ -14,7 +14,7 @@
 - `docs/golden/words.json`, `docs/golden/sentences.json`, `docs/golden/paragraphs.json`를 lightweight reviewed-golden 평가 자산으로 재정리
 - 단어, 문장, 문단 수준 golden 체크를 위한 경량 평가 경로 추가
 - 이후 모델, 프롬프트, 파이프라인 비교를 위한 optional metadata 추가
-- `candidate_ko`를 `gpt-5.4-mini`로 만들고 `improved_candidate_ko`를 `gpt-5.4`로 재작성하는 두 단계 파이프라인 추가
+- `candidate_ko`와 `improved_candidate_ko`를 `gpt-5.5` 기반의 서로 다른 prompt/stage로 생성하는 두 단계 파이프라인 추가
 - first-pass eval과 improved eval을 비교하는 before/after 보고서 경로 추가
 
 ## 다음 단계

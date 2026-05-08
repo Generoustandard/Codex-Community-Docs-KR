@@ -62,6 +62,10 @@ POSITIVE_ISSUE_PATTERNS = (
     "terminology and style are consistent",
     "terminology consistent otherwise",
     "translation is strong",
+    "전반적으로 정확",
+    "의미 전달이 정확",
+    "수치, 범위",
+    "원문의 핵심 의미",
 )
 
 
@@ -228,8 +232,8 @@ def main() -> None:
         default=None,
         help="출력 경로. 기본값은 `reports/<input-stem>.eval.json`입니다.",
     )
-    parser.add_argument("--backtranslation-model", default="gpt-5.4-mini")
-    parser.add_argument("--judge-model", default="gpt-5.4-mini")
+    parser.add_argument("--backtranslation-model", default="gpt-5.5")
+    parser.add_argument("--judge-model", default="gpt-5.5")
     parser.add_argument("--embedding-model", default="text-embedding-3-small")
     parser.add_argument(
         "--candidate-field",

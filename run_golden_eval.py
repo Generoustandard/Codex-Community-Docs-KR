@@ -59,9 +59,16 @@ UNIT_LEVELS = {
     "sentences": "sentence",
     "paragraphs": "paragraph",
 }
-APPROVED_TARGET_ROLE = "approved_reviewed_golden"
-REVIEW_TARGET_ROLE = "reviewed_golden_candidate"
-EXAMPLE_ONLY_ROLE = "example_only"
+APPROVED_STATUS = "approved_reviewed_golden"
+CANDIDATE_STATUS = "candidate"
+EXAMPLE_ONLY_STATUS = "example_only"
+
+
+def _reviewed_golden_text(record: dict) -> str:
+    value = record.get("reviewed_golden_ko") or record.get("improved_ko")
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"Golden record {record.get('id', '<unknown>')} is missing reviewed_golden_ko/improved_ko.")
+    return value.strip()
 
 
 def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]]:
@@ -70,13 +77,13 @@ def _create_embeddings(client, model: str, texts: list[str]) -> list[list[float]
 
 
 def _select_review_targets(records: list[dict], *, golden_set: str) -> tuple[list[dict], dict[str, int | str]]:
-    approved = [record for record in records if record.get("target_role") == APPROVED_TARGET_ROLE]
-    pending_candidates = [record for record in records if record.get("target_role") == REVIEW_TARGET_ROLE]
-    example_only_count = sum(1 for record in records if record.get("target_role") == EXAMPLE_ONLY_ROLE)
+    approved = [record for record in records if record.get("status") == APPROVED_STATUS]
+    pending_candidates = [record for record in records if record.get("status") == CANDIDATE_STATUS]
+    example_only_count = sum(1 for record in records if record.get("status") == EXAMPLE_ONLY_STATUS)
 
     if approved:
         return approved, {
-            "selected_role": APPROVED_TARGET_ROLE,
+            "selected_status": APPROVED_STATUS,
             "approved_reviewed_count": len(approved),
             "pending_candidate_count": len(pending_candidates),
             "example_only_count": example_only_count,
@@ -84,15 +91,15 @@ def _select_review_targets(records: list[dict], *, golden_set: str) -> tuple[lis
 
     if pending_candidates:
         return pending_candidates, {
-            "selected_role": REVIEW_TARGET_ROLE,
+            "selected_status": CANDIDATE_STATUS,
             "approved_reviewed_count": 0,
             "pending_candidate_count": len(pending_candidates),
             "example_only_count": example_only_count,
         }
 
     raise ValueError(
-        f"{golden_set} does not contain any records marked as '{APPROVED_TARGET_ROLE}' or '{REVIEW_TARGET_ROLE}'. "
-        "Mark a small reviewed subset before running golden evaluation."
+        f"{golden_set} does not contain any records marked as '{APPROVED_STATUS}' or '{CANDIDATE_STATUS}'. "
+        "For the current Phase 1 MVP, only the official page-pair paragraph set is populated."
     )
 
 
@@ -210,7 +217,7 @@ def _build_summary(records: list[dict], *, include_backtranslation: bool) -> dic
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        description="각 golden 파일에서 approved reviewed-golden subset을 우선 사용하고, 없으면 reviewed_golden_candidate를 대상으로 경량 평가를 실행합니다.",
+        description="공식 OpenAI EN-KO pair에서 승인된 reviewed-golden subset을 대상으로 경량 평가를 실행합니다.",
     )
     parser.add_argument("--golden-set", required=True, choices=sorted(UNIT_LEVELS))
     parser.add_argument(
@@ -228,9 +235,9 @@ def main() -> None:
         default="candidate_ko",
         help="`--input`에서 읽을 field. 후속 개선안을 평가할 때는 `improved_candidate_ko`를 사용합니다.",
     )
-    parser.add_argument("--generation-model", default="gpt-5.4-mini")
+    parser.add_argument("--generation-model", default="gpt-5.5")
     parser.add_argument("--embedding-model", default="text-embedding-3-small")
-    parser.add_argument("--backtranslation-model", default="gpt-5.4-mini")
+    parser.add_argument("--backtranslation-model", default="gpt-5.5")
     parser.add_argument("--batch-size", type=int, default=8)
     parser.add_argument("--skip-backtranslation", action="store_true", help="backtranslation 유사도 계산을 건너뜁니다.")
     parser.add_argument("--run-label", default=None, help="여러 golden 평가 실행을 비교하기 위한 optional label.")
@@ -271,14 +278,17 @@ def main() -> None:
 
     normalized_records = []
     for golden_record in golden_records:
+        reviewed_golden_ko = _reviewed_golden_text(golden_record)
         normalized_records.append(
             {
                 "id": golden_record["id"],
                 "source_en": golden_record["source_en"],
-                "reviewed_golden_ko": golden_record["improved_ko"],
+                "reviewed_golden_ko": reviewed_golden_ko,
+                "contrastive_ko": golden_record.get("contrastive_ko") or golden_record.get("bad_ko"),
                 "candidate_ko": candidates_by_id[golden_record["id"]],
                 "notes": golden_record["notes"],
                 "tags": golden_record["tags"],
+                "status": golden_record["status"],
                 "target_role": golden_record["target_role"],
                 "review_status": golden_record["review_status"],
             }
@@ -343,12 +353,14 @@ def main() -> None:
             "id": record["id"],
             "source_en": record["source_en"],
             "reviewed_golden_ko": record["reviewed_golden_ko"],
+            "contrastive_ko": record["contrastive_ko"],
             "candidate_ko": record["candidate_ko"],
             "candidate_vs_reviewed_golden_score": cosine_to_score(
                 cosine_similarity(candidate_embeddings[index], golden_embeddings[index])
             ),
             "notes": record["notes"],
             "tags": record["tags"],
+            "status": record["status"],
             "target_role": record["target_role"],
             "review_status": record["review_status"],
         }
@@ -377,11 +389,11 @@ def main() -> None:
             **output_meta,
             "golden_set": args.golden_set,
             "unit_level": UNIT_LEVELS[args.golden_set],
-            "golden_target_field": "improved_ko",
+            "golden_target_field": "reviewed_golden_ko",
             "evaluated_at": utc_timestamp(),
             "config": {
-                "selection_rule": f"target_role={selection_stats['selected_role']}",
-                "selected_role": selection_stats["selected_role"],
+                "selection_rule": f"status={selection_stats['selected_status']}",
+                "selected_status": selection_stats["selected_status"],
                 "source_pool_count": len(golden_pool),
                 "review_target_count": len(golden_records),
                 "approved_reviewed_count": selection_stats["approved_reviewed_count"],
@@ -397,8 +409,11 @@ def main() -> None:
             "records": evaluated_records,
         },
     )
-    print(f"{len(evaluated_records)}개의 reviewed golden 평가 결과를 {output_path}에 저장했습니다.")
+    print(f"{len(evaluated_records)}개 reviewed-golden 평가 결과를 {output_path}에 저장했습니다.")
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except ValueError as exc:
+        raise SystemExit(f"error: {exc}") from None

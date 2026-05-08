@@ -6,8 +6,8 @@ from pathlib import Path
 from mvp.openai_utils import load_records_payload
 
 
-RECOMMENDED_GENERATION_MODEL = "gpt-5.4-mini"
-RECOMMENDED_REWRITE_MODEL = "gpt-5.4"
+RECOMMENDED_GENERATION_MODEL = "gpt-5.5"
+RECOMMENDED_REWRITE_MODEL = "gpt-5.5"
 CLEAR_IMPROVEMENT_THRESHOLD = 1.0
 
 
@@ -119,7 +119,7 @@ def _format_provenance(meta: dict, config: dict) -> str:
     ):
         lines.append("")
         lines.append(
-            "> Note: This report may reflect a non-default configuration. The current two-stage recommendation is `gpt-5.4-mini` for first-pass generation, `gpt-5.4` for rewrite, and `gpt-5.4-mini` for backtranslation and judging."
+            "> Note: This report may reflect a non-default configuration. The current recommendation is `gpt-5.5` for first-pass generation, rewrite, backtranslation, and judging."
         )
 
     return "\n".join(lines)

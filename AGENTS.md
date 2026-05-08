@@ -8,8 +8,8 @@
 
 - Phase 1은 공식 `openai.com` EN-KO 페이지 쌍에 집중합니다.
 - 기본 흐름은 문서 쌍 수집, 문단 단위 정렬, `candidate_ko` 생성, `improved_candidate_ko` 재작성, `reference_ko` 기준 평가, 보고서 생성입니다.
-- `candidate_ko`는 `gpt-5.4-mini`로 만든 빠른 1차 번역입니다.
-- `improved_candidate_ko`는 `gpt-5.4`로 1차 후보를 다듬은 품질 개선안입니다.
+- `candidate_ko`는 `gpt-5.5` first-pass prompt로 만든 1차 번역입니다.
+- `improved_candidate_ko`는 `gpt-5.5` rewrite prompt로 1차 후보를 다듬은 품질 개선안입니다.
 - `docs/golden/` 아래에는 단어, 문장, 문단 수준의 경량 golden-example 체크 레이어가 함께 존재합니다.
 - `developers.openai.com`은 Phase 2 확장 트랙이며, 현재 MVP의 주 경로가 아닙니다.
 
@@ -17,8 +17,8 @@
 
 - `source_en`: 공식 영어 원문
 - `reference_ko`: OpenAI가 게시한 공식 한국어 번역
-- `candidate_ko`: `gpt-5.4-mini`가 만든 first-pass candidate
-- `improved_candidate_ko`: `gpt-5.4`가 만든 rewrite candidate
+- `candidate_ko`: `gpt-5.5` first-pass prompt가 만든 candidate
+- `improved_candidate_ko`: `gpt-5.5` rewrite prompt가 만든 rewrite candidate
 - `reviewed_golden`: 경량 회귀 체크, sanity check, 이후 비교 실험에 쓰는 human-reviewed 예시
 
 ## 제약

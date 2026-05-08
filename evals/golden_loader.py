@@ -5,9 +5,15 @@ from pathlib import Path
 
 
 DATA_FILES = ("words.json", "sentences.json", "paragraphs.json")
-REQUIRED_FIELDS = {"id", "source_en", "improved_ko", "notes", "tags", "target_role", "review_status"}
+REQUIRED_FIELDS = {"id", "source_en", "improved_ko", "notes", "tags", "target_role", "review_status", "status"}
 TARGET_ROLES = {"approved_reviewed_golden", "reviewed_golden_candidate", "example_only"}
 REVIEW_STATUSES = {"maintainer_approved", "pending_human_review", "example_bank"}
+STATUSES = {"approved_reviewed_golden", "candidate", "example_only"}
+STATUS_COMBINATIONS = {
+    "approved_reviewed_golden": ("approved_reviewed_golden", "maintainer_approved"),
+    "candidate": ("reviewed_golden_candidate", "pending_human_review"),
+    "example_only": ("example_only", "example_bank"),
+}
 
 
 def _resolve_golden_dir(base_dir: str | Path) -> Path:
@@ -38,6 +44,14 @@ def _validate_record(record: dict, path: Path, index: int) -> None:
         raise ValueError(f"{path} record #{index} must use one of {sorted(TARGET_ROLES)} for 'target_role'.")
     if record["review_status"] not in REVIEW_STATUSES:
         raise ValueError(f"{path} record #{index} must use one of {sorted(REVIEW_STATUSES)} for 'review_status'.")
+    if record["status"] not in STATUSES:
+        raise ValueError(f"{path} record #{index} must use one of {sorted(STATUSES)} for 'status'.")
+    expected_role, expected_review_status = STATUS_COMBINATIONS[record["status"]]
+    if record["target_role"] != expected_role or record["review_status"] != expected_review_status:
+        raise ValueError(
+            f"{path} record #{index} uses inconsistent golden status metadata for 'status={record['status']}'. "
+            f"Expected target_role={expected_role!r} and review_status={expected_review_status!r}."
+        )
 
 
 def load_goldens(base_dir: str | Path) -> dict[str, list[dict]]:

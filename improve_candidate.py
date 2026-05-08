@@ -116,7 +116,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        default="gpt-5.4",
+        default="gpt-5.5",
         help="Rewrite model used for quality refinement.",
     )
     parser.add_argument(
