@@ -42,7 +42,7 @@ def main() -> None:
     )
     parser.add_argument(
         "--model",
-        default="gpt-5.4-mini",
+        default="gpt-5.5",
         help="번역에 사용할 OpenAI 모델.",
     )
     parser.add_argument("--batch-size", type=int, default=8, help="한 요청에서 번역할 블록 수.")

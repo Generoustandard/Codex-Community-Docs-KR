@@ -13,8 +13,8 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 
 현재 평가 파이프라인은 다음 산출물을 다룹니다.
 
-- `candidate_ko`: `gpt-5.4-mini`로 만든 first-pass 한국어 번역
-- `improved_candidate_ko`: `gpt-5.4`로 first-pass candidate를 다듬은 rewrite 한국어 번역
+- `candidate_ko`: `gpt-5.5` first-pass prompt로 만든 한국어 번역
+- `improved_candidate_ko`: `gpt-5.5` rewrite prompt로 first-pass candidate를 다듬은 한국어 번역
 - `backtranslated_en`: 현재 평가 중인 candidate field를 다시 영어로 옮긴 backtranslation
 
 `reviewed_golden`은 자동화된 Phase 1 점수화 루프 밖에 있는 개념입니다. 사람이 검토하고 의도적으로 승격한 예시만 regression testing 또는 더 깊은 평가에 사용합니다.
@@ -90,7 +90,7 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 ```json
 {
   "generated_at": "2026-03-31T16:59:18.814737+00:00",
-  "generation_model": "gpt-5.4-mini",
+  "generation_model": "gpt-5.5",
   "generation_stage": "first_pass_translation",
   "generation_output_field": "candidate_ko",
   "run_label": "phase1-baseline",
@@ -119,9 +119,9 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 ```json
 {
   "generated_at": "2026-03-31T16:59:18.814737+00:00",
-  "generation_model": "gpt-5.4-mini",
+  "generation_model": "gpt-5.5",
   "rewritten_at": "2026-03-31T17:10:04.102391+00:00",
-  "rewrite_model": "gpt-5.4",
+  "rewrite_model": "gpt-5.5",
   "rewrite_source_field": "candidate_ko",
   "rewrite_output_field": "improved_candidate_ko",
   "rewrite_prompt_label": "quality_rewrite_official_openai_style_v1",
@@ -143,14 +143,14 @@ Phase 1은 다음 두 요소가 모두 존재하는 공식 `openai.com` 페이�
 
 ```json
 {
-  "generation_model": "gpt-5.4-mini",
-  "rewrite_model": "gpt-5.4",
+  "generation_model": "gpt-5.5",
+  "rewrite_model": "gpt-5.5",
   "evaluated_at": "2026-03-31T17:02:52.303607+00:00",
   "config": {
     "candidate_field": "candidate_ko",
     "evaluated_stage": "first_pass",
-    "backtranslation_model": "gpt-5.4-mini",
-    "judge_model": "gpt-5.4-mini",
+    "backtranslation_model": "gpt-5.5",
+    "judge_model": "gpt-5.5",
     "embedding_model": "text-embedding-3-small",
     "score_scale": "0-100",
     "overall_formula": "0.30 * semantic_similarity_score + 0.25 * backtranslation_similarity_score + 0.15 * terminology_consistency_score + 0.30 * llm_judge_score"
@@ -294,38 +294,43 @@ overall_score =
 
 ## Golden Example Layer
 
-curated 또는 future-curated golden 자산은 `docs/golden/` 아래에 있으며 현재 다음 파일을 유지합니다.
+curated golden 자산은 `docs/golden/` 아래에 있습니다. 현재 review-ready Phase 1 범위에서는 공식 `openai.com` EN-KO pair에서 나온 approved paragraph 예시만 active golden target으로 사용합니다. 이전 Developer 문서 기반 예시는 현재 golden set에서 제거했고, 추후 Phase 2에서 별도로 다시 추가할 수 있습니다.
 
-- `words.json`
-- `sentences.json`
-- `paragraphs.json`
+현재 파일 상태:
+
+- `words.json`: 빈 placeholder
+- `sentences.json`: 빈 placeholder
+- `paragraphs.json`: `reviews/phase1_pair_review.md`에서 승인된 official page-pair paragraph records
 
 각 record는 다음 필드를 가집니다.
 
 - `source_en`
-- `bad_ko`
-- `improved_ko`
+- `reference_ko`
+- `contrastive_ko`
+- `reviewed_golden_ko`
+- `bad_ko` / `improved_ko` compatibility aliases
 - `notes`
 - `tags`
+- `status`
 - `target_role`
 - `review_status`
 
 해석 원칙:
 
-- `improved_ko`는 현재 golden 예시의 한국어 target이며, 경량 회귀 체크에서는 reviewed golden 텍스트 역할을 합니다.
-- `bad_ko`는 대비를 위한 contrastive example일 뿐입니다. candidate run도 아니고 golden target도 아닙니다.
+- `reference_ko`는 공식 한국어 reference이며, 자동으로 golden이 아닙니다.
+- `reviewed_golden_ko`는 maintainer-approved Korean target입니다.
+- `contrastive_ko`는 비교용 예시일 뿐이며 golden target이 아닙니다.
+- `improved_ko`는 `reviewed_golden_ko`의 compatibility alias입니다.
+- `bad_ko`는 `contrastive_ko`의 compatibility alias이며, 공식 한국어에 대한 평가 표현이 아닙니다.
+- `status = approved_reviewed_golden`은 현재 승인된 reviewed-golden subset을 뜻합니다.
 - `target_role = approved_reviewed_golden`인 항목은 현재 maintainer-approved reviewed-golden subset입니다.
-- `target_role = reviewed_golden_candidate`인 항목은 future-curated candidate이며, 승인된 subset이 없는 파일에서만 fallback target이 됩니다.
-- `target_role = example_only`인 항목은 유지하지만, 현재 평가 target으로는 사용하지 않습니다.
 - `review_status = maintainer_approved`는 승인된 reviewed-golden subset을 뜻합니다.
-- `review_status = pending_human_review`는 아직 최종 승인되지 않은 candidate를 뜻합니다.
-- `review_status = example_bank`는 설명용 example bank를 뜻합니다.
 - 이 파일들은 공식 문서 쌍 평가에서 쓰는 페이지 단위 `reference_ko`와는 별개입니다.
 
 `run_golden_eval.py`는 이 세트들을 위한 경량 machine-readable evaluation 경로를 제공합니다. 지원 범위는 다음과 같습니다.
 
-- 각 golden 파일에서 `approved_reviewed_golden`이 있으면 그 subset을 우선 선택
-- 승인된 subset이 없는 파일에서는 `reviewed_golden_candidate`를 fallback으로 선택
+- 현재 active target은 `paragraphs.json`의 `status = approved_reviewed_golden` records입니다.
+- `words.json`과 `sentences.json`은 공식 page-pair 기반 예시가 승인될 때까지 비어 있습니다.
 - `source_en`에서 fresh candidate 생성
 - 기존 candidate 파일 불러오기
 - `candidate_ko` 또는 `improved_candidate_ko` 필드 선택 비교
@@ -335,14 +340,14 @@ curated 또는 future-curated golden 자산은 `docs/golden/` 아래에 있으�
 
 현재 권장 Phase 1 흐름은 다음과 같습니다.
 
-1. `generate_candidate.py`로 `gpt-5.4-mini` 기반 first-pass `candidate_ko` 생성
+1. `generate_candidate.py`로 `gpt-5.5` 기반 first-pass `candidate_ko` 생성
 2. 필요하면 `run_eval.py --candidate-field candidate_ko`로 first-pass baseline 평가
-3. `improve_candidate.py`로 `gpt-5.4` 기반 `improved_candidate_ko` 생성
+3. `improve_candidate.py`로 `gpt-5.5` 기반 `improved_candidate_ko` 생성
 4. `run_eval.py --candidate-field improved_candidate_ko`로 rewrite 후보 평가
 5. `build_report.py --compare-input ...`로 first-pass와 improved candidate 비교 보고서 생성
 6. 사람이 최종 검토 후 일부 항목만 `reviewed_golden` 후보로 관리
 
-이 구조의 목적은 `gpt-5.4-mini`를 빠른 baseline generator로 유지하면서, `gpt-5.4`를 품질 재작성 전용 단계로 추가하는 것입니다.
+이 구조의 목적은 같은 `gpt-5.5` 모델을 쓰더라도 first-pass prompt와 rewrite prompt를 분리해, 초기 후보와 개선 후보를 명확히 비교할 수 있게 하는 것입니다.
 
 ## Minimal Human Review Artifact
 

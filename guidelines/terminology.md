@@ -2,33 +2,31 @@
 
 ## 기본 방침
 
-- 한 용어에는 가능한 한 하나의 대표 번역을 사용합니다.
-- 공식 이름, 제품명, API 이름, 모델명은 영어 표기를 유지합니다.
-- 어색한 직역보다 한국어 개발 문맥에서 익숙한 표현을 우선합니다.
-- 더 나은 선택이 있다면 PR에서 근거와 함께 조정할 수 있습니다.
+- 같은 문서 안에서는 같은 영어 용어를 가능한 한 같은 한국어 표현으로 번역합니다.
+- 공식 이름, 제품명, 모델명, 벤치마크명은 원문 표기를 우선 유지합니다.
+- 과도한 직역보다 한국어 독자가 이해하기 쉬운 표현을 우선합니다.
+- 용어 선택에 확신이 없으면 PR 설명이나 review note에 근거를 남깁니다.
 
 ## 시작 용어집
 
-| English term | 권장 한국어 | 메모 / 피할 표현 |
+| English term | 권장 한국어 | 메모 |
 | --- | --- | --- |
-| model | 모델 | 제품명이나 모델 ID는 원문 유지 |
-| prompt | 프롬프트 | 문맥에 따라 "입력 프롬프트"로 풀어쓸 수 있음 |
-| token | 토큰 | 의미 단위를 임의로 풀어 번역하지 않음 |
-| response | 응답 | reply보다 응답 사용 권장 |
-| tool | 도구 | 첫 언급에서 tool 병기 가능, 툴로 고정하지 않음 |
-| streaming | 스트리밍 | "실시간 전송"으로 임의 치환하지 않음 |
-| realtime | 실시간 | 제품명에 포함된 Realtime은 원문 유지 가능 |
-| fine-tuning | 파인튜닝 | 필요하면 첫 언급에 fine-tuning 병기 |
-| embedding | 임베딩 | 내장, 삽입 등으로 바꾸지 않음 |
-| API | API | 응용 프로그램 인터페이스로 풀지 않음 |
-| SDK | SDK | 첫 언급에서만 설명 추가 가능 |
-| endpoint | 엔드포인트 | 종단점으로 일괄 치환하지 않음 |
-| rate limit | 요청 한도 | 필요하면 첫 언급에 rate limit 병기 |
-| function calling / tool calling | 도구 호출 | 최신 문맥에서는 tool calling 기준, 과거 문맥은 function calling 병기 가능 |
+| model | 모델 | 모델 ID는 원문 유지 |
+| benchmark | 벤치마크 | 고유 벤치마크명은 원문 유지 |
+| evaluation / eval | 평가 | 문맥상 `evals`는 원문 유지 가능 |
+| verified | 검증된 / Verified | 고유명사 일부이면 원문 유지 |
+| saturation | 포화 | 벤치마크 성능 포화 문맥 |
+| candidate | 후보 | `candidate_ko`는 원문 필드명 유지 |
+| reference | reference / 기준 번역 | `reference_ko`는 공식 한국어 reference |
+| golden | golden / 검토 완료 예시 | 자동 생성물이 아니라 human-reviewed 대상만 해당 |
+| backtranslation | 역번역 | 평가 방식 설명에서 사용 |
+| cosine similarity | 코사인 유사도 | 평가 지표명 |
+| prompt | 프롬프트 | 비교 실험 문맥 |
+| pipeline | 파이프라인 | 비교 실험 문맥 |
 
 ## 운영 원칙
 
-- 같은 문서 안에서는 같은 용어를 반복해서 바꾸지 않습니다.
-- 새 용어를 추가하거나 기존 용어를 바꾸고 싶다면 변경 이유를 PR에 짧게 적습니다.
-- 문서별 예외가 필요하면 원문 맥락을 우선하고, 예외 사유를 리뷰어가 확인할 수 있게 남깁니다.
-
+- `reference_ko`는 공식 한국어 reference이지 자동으로 golden이 아닙니다.
+- `candidate_ko`와 `improved_candidate_ko`는 모델 출력이므로 human review 전에는 golden이 아닙니다.
+- `reviewed_golden`은 유지보수자 또는 커뮤니티 리뷰어가 승인한 소수 예시만 의미합니다.
+- Phase 1에서는 공식 `openai.com` 영문/한국어 페이지 쌍을 기준으로 용어를 맞춥니다.

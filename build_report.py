@@ -6,8 +6,8 @@ from pathlib import Path
 from mvp.openai_utils import load_records_payload
 
 
-RECOMMENDED_GENERATION_MODEL = "gpt-5.4-mini"
-RECOMMENDED_REWRITE_MODEL = "gpt-5.4"
+RECOMMENDED_GENERATION_MODEL = "gpt-5.5"
+RECOMMENDED_REWRITE_MODEL = "gpt-5.5"
 CLEAR_IMPROVEMENT_THRESHOLD = 1.0
 
 
@@ -80,6 +80,7 @@ def _format_provenance(meta: dict, config: dict) -> str:
     pipeline_label = meta.get("pipeline_label")
     prompt_label = meta.get("prompt_label")
     rewrite_prompt_label = meta.get("rewrite_prompt_label")
+    post_generation_edits = meta.get("post_generation_edits", [])
     candidate_field = config.get("candidate_field")
     evaluated_stage = config.get("evaluated_stage")
     rewrite_source_field = meta.get("rewrite_source_field")
@@ -111,6 +112,12 @@ def _format_provenance(meta: dict, config: dict) -> str:
         lines.append(f"- prompt_label: `{prompt_label}`")
     if rewrite_prompt_label:
         lines.append(f"- rewrite_prompt_label: `{rewrite_prompt_label}`")
+    if post_generation_edits:
+        lines.append(f"- post_generation_edits: `{len(post_generation_edits)}`")
+        for edit in post_generation_edits:
+            lines.append(
+                f"- post_generation_edit: `{edit.get('id', 'unknown')}` `{edit.get('field', 'unknown')}` - {edit.get('reason', 'n/a')}"
+            )
 
     recorded_models = [generation_model, backtranslation_model, judge_model]
     rewrite_models = [rewrite_model]
@@ -119,7 +126,7 @@ def _format_provenance(meta: dict, config: dict) -> str:
     ):
         lines.append("")
         lines.append(
-            "> Note: This report may reflect a non-default configuration. The current two-stage recommendation is `gpt-5.4-mini` for first-pass generation, `gpt-5.4` for rewrite, and `gpt-5.4-mini` for backtranslation and judging."
+            "> Note: This report may reflect a non-default configuration. The current recommendation is `gpt-5.5` for first-pass generation, rewrite, backtranslation, and judging."
         )
 
     return "\n".join(lines)
